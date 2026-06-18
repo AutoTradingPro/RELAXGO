@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RELAXGO | Dashboard Terapis Partner</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --deep-gold: #B8860B;
+            --emerald-green: #043927;
+            --dark-bg: #011a12;
+            --metallic-green: #00FA9A;
+            --gold-gradient: linear-gradient(135deg, #B8860B 0%, #FFD700 100%);
+            --alert-red: #FF3B3B;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: #000; color: white; margin: 0; display: flex; justify-content: center; }
+        
+        .app-container { 
+            width: 100%; max-width: 450px; min-height: 100vh; 
+            background: var(--dark-bg); position: relative; 
+            padding-bottom: 100px; border-left: 1px solid #222; border-right: 1px solid #222; 
+        }
+
+        /* HEADER */
+        .header { 
+            padding: 15px 20px; border-bottom: 1px solid rgba(184,134,11,0.2); 
+            background: rgba(1, 26, 18, 0.95); position: sticky; top: 0; z-index: 1000;
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+        .logo { color: var(--deep-gold); font-size: 18px; font-weight: bold; letter-spacing: 2px; }
+        .header-right { text-align: right; }
+        .status-header-text { font-size: 9px; color: var(--metallic-green); border: 1px solid var(--metallic-green); padding: 1px 6px; border-radius: 10px; display: inline-block; margin-bottom: 5px; }
+        .auth-link { font-size: 11px; color: var(--deep-gold); cursor: pointer; text-decoration: none; display: block; font-weight: bold; }
+        .saldo-section { margin-top: 5px; }
+        .saldo-label { font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .saldo-value { font-size: 18px; font-weight: bold; color: var(--metallic-green); text-shadow: 0 0 8px rgba(0,250,154,0.2); }
+
+        /* TAB PAGES SYSTEM */
+        .tab-page { display: none; animation: fadeIn 0.3s ease; }
+        .tab-page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* SECTION STYLES */
+        .section { padding: 20px; }
+        h3 { font-size: 11px; color: var(--deep-gold); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; }
+
+        /* BERANDA SPECIFIC */
+        #map-terapis { height: 180px; width: 100%; border-radius: 15px; border: 1px solid var(--deep-gold); margin-bottom: 15px; }
+        .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-terima { background: var(--gold-gradient); color: var(--emerald-green); }
+        .timer-box { background: #000; padding: 15px; border-radius: 15px; text-align: center; border: 1px solid #333; margin-top: 15px; }
+        #stopwatch { font-size: 30px; font-family: 'Courier New', monospace; color: var(--metallic-green); }
+
+        /* AKUN PAGE UPDATED */
+        .profile-header { position: relative; display: inline-block; margin-top: 10px; }
+        .upload-badge { position: absolute; bottom: 0; right: 0; background: var(--deep-gold); color: white; border-radius: 50%; padding: 5px; cursor: pointer; border: 2px solid var(--dark-bg); }
+        
+        .status-kerja-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 15px 0; background: rgba(255,255,255,0.03); padding: 10px; border-radius: 30px; }
+        .status-label-kerja { font-size: 11px; font-weight: bold; color: #888; }
+        .status-label-kerja.active { color: var(--metallic-green); }
+
+        .subtitle-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 5px; margin-top: 20px; }
+        .subtitle-data { font-size: 11px; color: var(--deep-gold); font-weight: bold; }
+        .approval-badge { font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; }
+        .badge-pending { color: var(--alert-red); border: 1px solid var(--alert-red); }
+        .badge-approved { color: var(--metallic-green); border: 1px solid var(--metallic-green); text-shadow: 0 0 5px var(--metallic-green); }
+        
+        .menu-list { margin-top: 10px; }
+        .menu-item { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #111; color: #ccc; cursor: pointer; font-size: 13px; }
+        .menu-left { display: flex; align-items: center; gap: 15px; }
+        .menu-item i { color: var(--deep-gold); font-size: 20px; }
+
+        /* TOGGLE SWITCH */
+        .switch { position: relative; display: inline-block; width: 34px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--deep-gold); }
+        input:checked + .slider:before { transform: translateX(14px); }
+        
+        /* Green slider for status kerja */
+        .switch-kerja input:checked + .slider { background-color: var(--metallic-green); }
+
+        /* FOOTER */
+        .footer-nav { position: fixed; bottom: 0; width: 100%; max-width: 450px; background: white; display: flex; justify-content: space-around; padding: 12px 0 8px; border-radius: 25px 25px 0 0; z-index: 1001; }
+        .footer-item { display: flex; flex-direction: column; align-items: center; color: #777; cursor: pointer; min-width: 60px; }
+        .footer-item.active { color: var(--emerald-green); font-weight: bold; }
+        .footer-item span { font-size: 9px; margin-top: 4px; }
+        .footer-profile-img { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #ccc; }
+
+        /* MODAL REGISTRASI */
+        #modal-auth { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: var(--dark-bg); width: 85%; max-height: 80vh; overflow-y: auto; padding: 25px; border-radius: 20px; border: 1px solid var(--deep-gold); }
+        .modal-box input { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #333; border-radius: 8px; color: white; box-sizing: border-box; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-top">
+            <div class="logo">RELAXGO</div>
+            <div class="header-right">
+                <div class="status-header-text" id="header-status-text">● AKTIF</div>
+                <div class="auth-link" onclick="openAuth()">LOGIN/REGISTER</div>
+            </div>
+        </div>
+        <div class="saldo-section">
+            <div class="saldo-label">Saldo Pendapatan</div>
+            <div class="saldo-value" id="terapis-saldo">Rp 0,-</div>
+        </div>
+    </div>
+
+    <div id="page-home" class="tab-page active">
+        <div class="section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Order Masuk</h3>
+                <div style="font-size: 10px; color: var(--deep-gold);"><i class="material-icons" style="font-size: 12px;">star</i> 4.9 (Statistik)</div>
+            </div>
+            <div id="map-terapis"></div>
+            <button class="btn-main btn-terima" onclick="terimaOrder()">
+                <i class="material-icons">check_circle</i> TERIMA ORDER
+            </button>
+            <div class="timer-box">
+                <div style="font-size: 10px; color: #888; margin-bottom: 5px;">Sesi Pijat Aktif</div>
+                <div id="stopwatch">00:00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-dompet" class="tab-page"><div class="section"><h3>Dompet Saya</h3><div style="background:rgba(255,255,255,0.05); padding:20px; border-radius:15px; border:1px solid var(--deep-gold); text-align:center;"><h2 style="color:var(--metallic-green); margin:0;">Rp 0,-</h2><button class="btn-main btn-terima" style="height:35px; margin-top:15px; font-size:11px;">TARIK DANA</button></div></div></div>
+
+    <div id="page-reward" class="tab-page"><div class="section"><h3>Pusat Reward</h3><p style="font-size:12px; color:#888;">Kumpulkan poin Bintang 5 Anda!</p></div></div>
+
+    <div id="page-pesan" class="tab-page"><div class="section"><h3>Kotak Masuk</h3><p style="font-size:12px; color:#888;">Belum ada pesan.</p></div></div>
+
+    <div id="page-akun" class="tab-page">
+        <div class="section" style="text-align:center; padding-bottom: 0;">
+            <div class="profile-header">
+                <img id="display-profile" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" style="width:90px; height:90px; border-radius:50%; border:2px solid var(--deep-gold);">
+                <label for="upload-profile" class="upload-badge"><i class="material-icons" style="font-size:16px;">photo_camera</i></label>
+                <input type="file" id="upload-profile" style="display:none" onchange="previewImg(this, 'display-profile')">
+            </div>
+            <h2 style="color:var(--deep-gold); margin:5px 0 0;">Terapis Partner</h2>
+            
+            <div class="status-kerja-container">
+                <span class="status-label-kerja" id="label-istirahat">ISTIRAHAT</span>
+                <label class="switch switch-kerja">
+                    <input type="checkbox" checked onchange="toggleStatusKerja(this)">
+                    <span class="slider"></span>
+                </label>
+                <span class="status-label-kerja active" id="label-aktif">AKTIF BEKERJA</span>
+            </div>
+
+            <div class="subtitle-row">
+                <div class="subtitle-data">LENGKAPI DATA MITRA (WAJIB)</div>
+                <div id="status-approval-badge" class="approval-badge badge-pending">BELUM DIAPPROVE</div>
+            </div>
+            
+            <div class="menu-list">
+                <div class="menu-item"><div class="menu-left"><i class="material-icons">face</i><span>Verifikasi Wajah & KTP</span></div><i class="material-icons" style="font-size:18px; color:#444;">file_upload</i></div>
+                <div class="menu-item"><div class="menu-left"><i class="material-icons">badge</i><span>Upload Foto KTP</span></div><i class="material-icons" style="font-size:18px; color:#444;">file_upload</i></div>
+                <div class="menu-item"><div class="menu-left"><i class="material-icons">home</i><span>Alamat Lengkap (KTP)</span></div><i class="material-icons" style="font-size:18px; color:#444;">edit</i></div>
+                
+                <div style="text-align:left; margin-top:15px;"><h4 style="font-size:11px; color:var(--deep-gold); margin-bottom:5px;">KEAHLIAN TERAPIS</h4></div>
+                <div class="menu-item"><span>A. Pijat Tradisional</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+                <div class="menu-item"><span>B. Pijat Refleksi</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+                <div class="menu-item"><span>C. Akupresur</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+                <div class="menu-item"><span>D. Aroma Terapi</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+                <div class="menu-item"><span>E. Deeptissue</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+                <div class="menu-item"><span>F. Prenatal</span><label class="switch"><input type="checkbox"><span class="slider"></span></label></div>
+
+                <div class="menu-item" style="margin-top:10px;"><div class="menu-left"><i class="material-icons">workspace_premium</i><span>Upload Sertifikat (Bisa >1)</span></div><i class="material-icons" style="font-size:18px; color:#444;">add_a_photo</i></div>
+                <div class="menu-item"><div class="menu-left"><i class="material-icons">groups</i><span>Program Affiliasi</span></div><i class="material-icons" style="font-size:18px; color:var(--deep-gold);">chevron_right</i></div>
+                <div class="menu-item"><div class="menu-left"><i class="material-icons">settings</i><span>Keamanan & Akun Bank</span></div><i class="material-icons" style="font-size:18px; color:var(--deep-gold);">chevron_right</i></div>
+
+                <div class="menu-item" style="background: rgba(184,134,11,0.1); border-radius: 8px; margin: 10px 0; padding: 15px;">
+                    <div class="menu-left"><i class="material-icons">trending_up</i><span style="color:var(--deep-gold); font-weight:bold;">BERGABUNG MENJADI INVESTOR</span></div>
+                    <i class="material-icons" style="font-size:18px; color:var(--deep-gold);">stars</i>
+                </div>
+
+                <div class="menu-item" style="color:#ff4444;" onclick="location.reload()">
+                    <div class="menu-left"><i class="material-icons" style="color:#ff4444;">logout</i><span>Keluar Aplikasi</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-nav">
+        <div class="footer-item active" onclick="switchTab('home', this)"><i class="material-icons">dashboard</i><span>Beranda</span></div>
+        <div class="footer-item" onclick="switchTab('dompet', this)"><i class="material-icons" style="font-size:22px;">account_balance_wallet</i><span>Dompet</span></div>
+        <div class="footer-item" onclick="switchTab('reward', this)"><i class="material-icons">emoji_events</i><span>Reward</span></div>
+        <div class="footer-item" onclick="switchTab('pesan', this)"><i class="material-icons">chat</i><span>Pesan</span></div>
+        <div class="footer-item" onclick="switchTab('akun', this)"><img id="footer-icon-img" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="footer-profile-img"><span>Akun</span></div>
+    </div>
+</div>
+
+<div id="modal-auth">
+    <div class="modal-box">
+        <h2 style="color:var(--deep-gold); font-size:18px; text-align:center; margin-top:0;">Registrasi Terapis</h2>
+        <input type="text" id="reg-nama-ktp" placeholder="Nama Lengkap (Sesuai KTP)">
+        <input type="text" id="reg-nama-panggung" placeholder="Nama Terapis (Nama Panggung)">
+        <input type="text" id="reg-alamat" placeholder="Alamat Domisili">
+        <input type="number" id="reg-nik" placeholder="NIK (Nomor Induk Kependudukan)">
+        <input type="password" id="reg-pass" placeholder="Password">
+        <input type="password" id="reg-pass-v" placeholder="Verifikasi Password">
+        <button class="btn-main btn-terima" style="margin-top:15px;" onclick="handleDaftar()">DAFTAR SEKARANG</button>
+        <p onclick="closeAuth()" style="font-size:11px; color:#888; text-align:center; cursor:pointer; margin-top:15px;">Tutup</p>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    function switchTab(pageId, el) {
+        document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.footer-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        el.classList.add('active');
+        if(pageId === 'home') setTimeout(() => mapTerapis.invalidateSize(), 200);
+    }
+
+    function toggleStatusKerja(checkbox) {
+        const labelAktif = document.getElementById('label-aktif');
+        const labelIstirahat = document.getElementById('label-istirahat');
+        const headerStatus = document.getElementById('header-status-text');
+
+        if (checkbox.checked) {
+            labelAktif.classList.add('active');
+            labelIstirahat.classList.remove('active');
+            headerStatus.innerText = "● AKTIF";
+            headerStatus.style.color = "var(--metallic-green)";
+            headerStatus.style.borderColor = "var(--metallic-green)";
+        } else {
+            labelAktif.classList.remove('active');
+            labelIstirahat.classList.add('active');
+            headerStatus.innerText = "○ ISTIRAHAT";
+            headerStatus.style.color = "#888";
+            headerStatus.style.borderColor = "#888";
+        }
+    }
+
+    // Fungsi simulasi Approve Admin (Bisa dipicu nanti lewat Firebase)
+    function setApprovalStatus(isApproved) {
+        const badge = document.getElementById('status-approval-badge');
+        if(isApproved) {
+            badge.innerText = "SUDAH DIAPPROVE";
+            badge.className = "approval-badge badge-approved";
+        } else {
+            badge.innerText = "BELUM DIAPPROVE";
+            badge.className = "approval-badge badge-pending";
+        }
+    }
+
+    function previewImg(input, targetId) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById(targetId).src = e.target.result;
+                document.getElementById('footer-icon-img').src = e.target.result;
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function openAuth() { document.getElementById('modal-auth').style.display = 'flex'; }
+    function closeAuth() { document.getElementById('modal-auth').style.display = 'none'; }
+    function handleDaftar() { alert("Data terkirim!"); closeAuth(); }
+
+    let mapTerapis = L.map('map-terapis', { zoomControl: false }).setView([-7.15097, 111.88175], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapTerapis);
+    L.marker([-7.15097, 111.88175]).addTo(mapTerapis);
+
+    let seconds = 0;
+    function terimaOrder() {
+        setInterval(() => {
+            seconds++;
+            let hrs = Math.floor(seconds / 3600);
+            let mins = Math.floor((seconds - (hrs * 3600)) / 60);
+            let secs = seconds % 60;
+            document.getElementById('stopwatch').innerText = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RELAXGO APP - DeFi & Arbitrage Ecosystem</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <style>
+        /* Tambahan darurat: Jika file CSS gagal dimuat, 
+            kode ini akan memaksa navigasi muncul */
+        .bottom-nav {
+            display: flex !important;
+            justify-content: space-around;
+            align-items: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 70px;
+            background: #011a12 !important;
+            border-top: 1px solid #B8860B;
+            z-index: 9999;
+        }
+        .b-nav-item { color: #888; text-align: center; cursor: pointer; flex: 1; }
+        .b-nav-item i { font-size: 24px; }
+        .b-nav-item span { font-size: 10px; display: block; }
+        .active { color: #FFD700 !important; }
+
+        /* --- RESPONSIVE MOBILE ADJUSTMENT --- */
+@media screen and (max-width: 768px) {
+  
+  /* 1. Halaman Profile: Ubah Header jadi Vertikal */
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+    padding: 20px;
+  }
+
+  /* 2. Grid Aktivasi: Dari 3 Kolom jadi 1 Kolom Menurun */
+  .activation-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px;
+  }
+
+  /* 3. Grid JOBS di Overview: Dari 2 Kolom jadi 1 Kolom Menurun */
+  .jobs-grid {
+    grid-template-columns: 1fr !important;
+    gap: 15px;
+  }
+
+  /* 4. Wallet Summary: Susun ke bawah agar tidak tabrakan teksnya */
+  .wallet-summary {
+    flex-direction: column;
+    gap: 15px;
+    align-items: center;
+    text-align: center;
+  }
+
+  .wallet-summary button {
+    width: 100%;
+    padding: 10px;
+  }
+
+  /* 5. Form Pendaftaran Partner: Sederhanakan Grid Dokumen & Lokasi */
+  .upload-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .upload-box style {
+    grid-column: span 1 !important; /* SKCK jadi normal */
+  }
+
+  /* Dropdown Provinsi & Kota jadi menurun */
+  div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 0px !important;
+  }
+}
+    </style>
+</head>
+<body>
+
+<header class="top-bar">
+    <div class="logo-area"> 
+       <img src="https://i.ibb.co.com/C5NCSqVs/LOGO-RELAXGO-removebg-preview.png" alt="RELAXGO Logo" class="main-logo" onclick="loadPage('overview')">
+    </div>
+
+    <nav class="header-nav">
+    <div class="nav-item active" onclick="loadPage('overview')">Overview</div>
+    
+    <div class="nav-item has-mega-menu">
+        <span onclick="loadPage('arbitrage')">Arbitrage <i class="material-icons" style="font-size: 14px;">expand_more</i></span>
+        
+        <div class="mega-menu-content">
+            <div class="mega-menu-grid">
+                <div class="mega-col">
+                    <h4><i class="material-icons">flash_on</i> Execution</h4>
+                    <a href="#" onclick="loadPage('staking')">staking</a>
+                    <a href="#" onclick="loadPage('deposit')">Wallet</a>
+                    <a href="#" onclick="loadPage('arbitrage')">History Logs</a>
+                </div>
+                <div class="mega-col">
+                    <h4><i class="material-icons">lan</i> Networks</h4>
+                    <a href="#" onclick="loadPage('arbitrage')">Ethereum Mainnet</a>
+                    <a href="#" onclick="loadPage('arbitrage')">Arbitrum L2</a>
+                    <a href="#" onclick="loadPage('arbitrage')">Base Ecosystem</a>
+                </div>
+                <div class="mega-col">
+                    <h4><i class="material-icons">insights</i> Analytics</h4>
+                    <a href="#" onclick="loadPage('heatmap')">Price Heatmap</a>
+                    <a href="#" onclick="loadPage('arbitrage')">DEX Volatility</a>
+                    <a href="#" onclick="loadPage('arbitrage')">Profit Projections</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-item" onclick="loadPage('swap')">Swap</div>
+
+    <div class="nav-item" onclick="loadPage('Marketplace')">Marketplace</div>
+
+    <div class="nav-item" onclick="loadPage('jobs')">Jobs</div>
+
+    <div class="nav-item" onclick="loadPage('roadmap')">RoadMap</div>
+    </nav>
+
+    <div class="header-actions">
+        <div class="search-box-solid">
+            <i class="material-icons" style="font-size:16px; color:#555;">search</i>
+            <input type="text" placeholder="SEARCH...">
+        </div>
+        
+        <button class="btn-blue-metallic" onclick="toggleAuthModal()">LOG IN</button>
+        
+        <button class="btn-gold" id="connect-wallet-btn" onclick="toggleWalletModal()">CONNECT WALLET</button>
+ 
+    </div>
+<div class="header-right-actions" style="display: flex; align-items: center; gap: 15px;">
+    
+    <div class="user-profile-trigger" 
+         onclick="loadPage('profile')" 
+         title="Profile" 
+         style="cursor: pointer; position: relative; display: flex; align-items: center;">
+        
+        <i class="material-icons gold-icon" style="font-size: 28px;">account_circle</i>
+        
+        <span style="position: absolute; bottom: 0; right: 0; width: 10px; height: 10px; background: #00FF7F; border: 2px solid #000; border-radius: 50%;"></span>
+    </div>
+
+</div>
+
+</header>
+
+<nav class="bottom-nav">
+    <div class="b-nav-item active" onclick="loadPage('overview')">
+        <i class="material-icons">dashboard</i><span>Home</span>
+    </div>
+    <div class="b-nav-item" onclick="loadPage('arbitrage')">
+        <i class="material-icons">bolt</i><span>Arbit</span>
+    </div>
+    <div class="b-nav-item" onclick="loadPage('heatmap')">
+        <i class="material-icons">map</i><span>Map</span>
+    </div>
+    <div class="b-nav-item" onclick="loadPage('network')">
+        <i class="material-icons">language</i><span>Net</span>
+    </div>
+    <div class="b-nav-item" onclick="loadPage('staking')">
+        <i class="material-icons">account_balance</i><span>
+    </div>
+</nav>
+
+    <main id="main-content" style="padding: 20px; padding-bottom: 100px; color: white;">
+        <div id="page-content">
+            Loading Dashboard...
+        </div>
+    </main>
+
+    <footer class="main-footer">
+    <div class="footer-container">
+        <div class="footer-logo-section">
+    <a href="#" onclick="loadPage('overview')">
+        <img src="https://i.ibb.co.com/C5NCSqVs/LOGO-RELAXGO-removebg-preview.png" alt="RELAXGO Logo" class="footer-logo-img">
+    </a>
+    <p class="logo-subtext">Advanced Arbitrage Solutions</p>
+    
+    <p class="footer-description">
+        The most advanced massage therapist network and arbitrage ecosystem. 
+        Efficiency, security, and professional service.
+    </p>
+</div>
+
+        <div class="footer-menu-grid">
+            <div class="footer-col">
+                <h4 class="footer-title">Products</h4>
+                <div class="footer-links">
+                    <a href="#">Flashloan Engine</a>
+                    <a href="#">Cross-chain Swap</a>
+                    <a href="#">Yield Farming</a>
+                    <a href="#">Token Staking</a>
+                    <a href="#">API Documentation</a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Company</h4>
+                <div class="footer-links">
+                    <a href="#">About Us</a>
+                    <a href="#">Our Team</a>
+                    <a href="#">Careers</a>
+                    <a href="#">Press Kit</a>
+                    <a href="#">Contact</a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Support</h4>
+                <div class="footer-links">
+                    <a href="#">Help Center</a>
+                    <a href="#">Tutorials</a>
+                    <a href="#">Security Audit</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Privacy Policy</a>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4 class="footer-title">Socials</h4>
+                <div class="footer-links">
+                    <a href="https://t.me/yourlink">Telegram Group</a>
+                    <a href="https://twitter.com/yourlink">Twitter / X</a>
+                    <a href="https://discord.gg/yourlink">Discord Server</a>
+                    <a href="#">Medium Blog</a>
+                    <a href="#">GitHub Repo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer-bottom-bar">
+        <p>&copy; 2026 RelaxGO Ecosystem. Built for the future of DeFi.</p>
+    </div>
+</footer>
+
+    <script src="js/dashboard.js"></script>
+    <script src="js/arbitrage.js"></script>
+    <script src="js/web3-logic.js"></script>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="wallet-modal" class="auth-overlay" style="display: none;">
+        <div class="auth-card wallet-selector">
+            <button class="close-auth" onclick="toggleWalletModal()">&times;</button>
+            
+            <div class="auth-header">
+                <i class="material-icons gold-icon" style="font-size: 40px;">account_balance_wallet</i>
+                <h2>Connect Wallet</h2>
+                <p>Select your preferred wallet to connect to RelaxGo</p>
+            </div>
+
+            <div class="wallet-grid" style="display: grid; gap: 10px; margin-top: 20px;">
+                <div class="wallet-option" onclick="connectWallet('metamask')" style="cursor:pointer; display:flex; align-items:center; gap:15px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Mirror_Logo.svg" alt="MetaMask" width="30">
+                    <span>MetaMask</span>
+                </div>
+
+                <div class="wallet-option" onclick="connectWallet('trust')" style="cursor:pointer; display:flex; align-items:center; gap:15px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                    <img src="https://trustwallet.com/assets/images/media/assets/trust_platform.svg" alt="Trust Wallet" width="30">
+                    <span>Trust Wallet</span>
+                </div>
+
+                <div class="wallet-option" onclick="connectWallet('coinbase')" style="cursor:pointer; display:flex; align-items:center; gap:15px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                    <img src="https://avatars.githubusercontent.com/u/18060234?s=280&v=4" alt="Coinbase" width="30">
+                    <span>Coinbase Wallet</span>
+                </div>
+
+                <div class="wallet-option" onclick="connectWallet('walletconnect')" style="cursor:pointer; display:flex; align-items:center; gap:15px; padding:15px; background:rgba(255,255,255,0.05); border-radius:10px;">
+                    <i class="material-icons" style="font-size: 30px; color: #3b99fc;">sync</i>
+                    <span>WalletConnect</span>
+                </div>
+            </div>
+
+            <p class="auth-footer-text" style="text-align:center; font-size:11px; color:#666; margin-top:20px;">By connecting, you agree to RelaxGo's <b>Terms of Service</b>.</p>
+        </div>
+    </div>
+
+    <div id="auth-modal" class="auth-overlay" style="display: none;">
+        <div class="auth-card">
+            <button class="close-auth" onclick="toggleAuthModal()">&times;</button>
+            
+            <div class="auth-header">
+                <img src="https://i.ibb.co.com/C5NCSqVs/LOGO-RELAXGO-removebg-preview.png" alt="RELAXGO" class="auth-logo" style="width:60px;">
+                <h2>Welcome to RelaxGo</h2>
+                <p>Experience the 5-star crypto lifestyle</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button id="tab-login" class="auth-tab active" onclick="switchAuth('login')">Login</button>
+                <button id="tab-register" class="auth-tab" onclick="switchAuth('register')">Register</button>
+            </div>
+
+            <div class="auth-body">
+                <div id="auth-form-container">
+                    <div class="input-group-auth">
+                        <i class="material-icons">email</i>
+                        <input type="email" placeholder="Email Address" id="auth-email">
+                    </div>
+                    <div class="input-group-auth">
+                        <i class="material-icons">lock</i>
+                        <input type="password" placeholder="Password" id="auth-pass">
+                    </div>
+
+                    <div class="auth-options" id="register-only-options" style="display: none;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="news-consent">
+                            <span class="checkmark"></span>
+                            <span class="label-text">Please keep me updated by email with the latest crypto news, research findings, reward programs, and coin listings from <b>RelaxGo</b>.</span>
+                        </label>
+                    </div>
+
+                    <button class="btn-gold full-width auth-submit" style="width:100%; padding:12px; margin-top:10px;">CONTINUE</button>
+                </div>
+
+                <div class="divider" style="text-align:center; margin:20px 0; border-bottom:1px solid #333; line-height:0.1em;">
+                    <span style="background:#121212; padding:0 10px; color:#555; font-size:10px;">OR CONTINUE WITH</span>
+                </div>
+
+                <div class="social-auth-grid" style="display: flex; justify-content: space-around;">
+                    <button class="social-btn"><img src="https://cdn-icons-png.flaticon.com/512/2991/2991148.png" alt="Google" width="20"></button>
+                    <button class="social-btn"><img src="https://cdn-icons-png.flaticon.com/512/0/747.png" alt="Apple" width="20"></button>
+                    <button class="social-btn"><img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" alt="Binance" width="20"></button>
+                    <button class="social-btn"><i class="material-icons">account_balance_wallet</i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

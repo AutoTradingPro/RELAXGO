@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RELAXGO | Bojonegoro Premium Portal</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+       :root {
+            --deep-gold: #B8860B;
+            --emerald-green: #043927;
+            --dark-bg: #011a12;
+            --gold-gradient: linear-gradient(135deg, #B8860B 0%, #FFD700 100%);
+            --success-green: #00FF7F;
+            --metallic-green: #00FA9A; /* TAMBAHKAN INI agar Rp 0 muncul warnanya */
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; background: #000; color: white; margin: 0; display: flex; justify-content: center; }
+        
+        .app-container { 
+            width: 100%; max-width: 450px; min-height: 100vh; 
+            background: var(--dark-bg); position: relative; 
+            padding-bottom: 80px; border-left: 1px solid #222; border-right: 1px solid #222; 
+        }
+
+        /* HEADER */
+        .header { 
+            padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 1px solid rgba(184,134,11,0.2); background: rgba(1, 26, 18, 0.95);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo { color: var(--deep-gold); font-size: 16px; font-weight: bold; letter-spacing: 2px; }
+        /* Atur tampilan saldo di bawah brand */
+        .saldo-header { 
+            color: var(--metallic-green); 
+            font-size: 15px;           /* Ukuran text sudah saya atur di sini */
+            font-weight: 600; 
+            margin-top: 5px; 
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.5px;
+            display: block;            /* Memastikan muncul di baris baru bawah logo */
+        }
+
+             .profile-area { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+        .login-text { font-size: 8px; color: var(--deep-gold); text-transform: uppercase; font-weight: bold; margin-top: 4px; letter-spacing: 0.5px; }
+        .profile-circle { width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--deep-gold); background: #222; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        /* MODAL REGISTER */
+        #auth-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; justify-content:center; align-items:center; }
+        .modal-box { 
+            background: var(--dark-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--deep-gold); 
+            width: 85%; max-width: 350px; text-align: center; max-height: 90vh; overflow-y: auto; 
+        }
+        .modal-box h3 { font-size: 14px; color: var(--deep-gold); margin-bottom: 15px; }
+        input { width: 100%; padding: 12px; margin: 6px 0; background: #000; border: 1px solid #333; border-radius: 10px; color: white; box-sizing: border-box; font-size: 13px; }
+
+
+        /* TABS SYSTEM */
+        .tab-page { display: none; animation: fadeIn 0.3s ease; }
+        .tab-page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* SECTION STYLES */
+        .section { padding: 0 20px; margin-top: 25px; }
+        h3 { font-size: 11px; color: var(--deep-gold); text-transform: uppercase; margin-bottom: 15px; letter-spacing: 2px; opacity: 0.8; }
+        #map { height: 180px; width: 100%; border-radius: 15px; border: 1px solid var(--deep-gold); z-index: 1; }
+        
+        /* TERAPIS SELECTOR */
+        .terapis-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .terapis-card { 
+            min-width: 100px; background: rgba(255,255,255,0.03); border: 1px solid #222; 
+            border-radius: 15px; padding: 10px; text-align: center; cursor: pointer; transition: 0.3s;
+        }
+        .terapis-card.active { border-color: var(--deep-gold); background: rgba(184,134,11,0.1); }
+        .terapis-avatar { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--deep-gold); margin: 0 auto 8px; object-fit: cover; }
+        .terapis-name { font-size: 11px; font-weight: bold; display: block; }
+        .terapis-rating { font-size: 10px; color: #FFD700; display: flex; justify-content: center; align-items: center; gap: 2px; }
+
+        .service-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .service-card { 
+            background: rgba(255,255,255,0.03); border: 1px solid #222; padding: 15px 5px; 
+            border-radius: 15px; cursor: pointer; display: flex; flex-direction: column; 
+            align-items: center; text-align: center; transition: 0.3s; 
+        }
+        .service-card.active { border-color: var(--deep-gold); background: rgba(184,134,11,0.1); }
+        .service-card .icon { font-size: 24px; margin-bottom: 8px; }
+        .service-card .title { font-weight: bold; font-size: 10px; color: #fff; }
+        
+        .duration-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .dur-btn { background: #111; border: 1px solid #222; color: #fff; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 12px; }
+        .dur-btn.active { background: var(--gold-gradient); color: var(--emerald-green); font-weight: bold; border: none; }
+
+        /* ORDER SUMMARY */
+        .order-summary-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(184,134,11,0.3);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .price-total { font-size: 18px; font-weight: bold; color: var(--success-green); }
+
+        /* WALLET DESIGN */
+        .wallet-card {
+            background: linear-gradient(135deg, #05f505 0%, #8B6508 100%);
+            border-radius: 20px; padding: 25px; position: relative; overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3); color: white; margin-bottom: 25px;
+        }
+        .wallet-chip { width: 40px; height: 30px; background: linear-gradient(135deg, #ffd700, #b8860b); border-radius: 5px; margin-bottom: 15px; }
+        .wallet-balance { font-size: 32px; font-weight: bold; font-family: 'Courier New', monospace; }
+        .wallet-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; }
+        .wallet-label { font-size: 9px; text-transform: uppercase; opacity: 0.8; letter-spacing: 1px; }
+
+        .pay-method-item {
+            background: rgba(255,255,255,0.05); border: 1px solid #222; padding: 15px;
+            border-radius: 12px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px;
+            cursor: pointer; transition: 0.3s;
+        }
+        .pay-method-item.active { border-color: var(--success-green); background: rgba(0, 255, 127, 0.05); }
+
+        /* PROFIL PAGE SPECIFIC */
+        .profile-header { text-align: center; padding: 30px 0; border-bottom: 1px solid #222; }
+        .profile-avatar-large { 
+            width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--deep-gold);
+            margin: 0 auto 15px; overflow: hidden;
+        }
+        .profile-menu-item {
+            display: flex; align-items: center; gap: 15px; padding: 18px 20px;
+            border-bottom: 1px solid #111; color: #ccc; cursor: pointer;
+        }
+        .profile-menu-item i { color: var(--deep-gold); }
+
+        /* SLIDESHOW */
+        .slideshow-container { width: 100%; height: 160px; position: relative; overflow: hidden; border-radius: 15px; border: 1px solid var(--deep-gold); }
+        .mySlides { display: none; width: 100%; height: 100%; }
+        .mySlides img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
+        .slide-caption { position: absolute; bottom: 15px; left: 15px; right: 15px; }
+        .slide-caption h2 { color: var(--deep-gold); margin: 0; font-size: 14px; }
+        .slide-caption p { color: #ddd; margin: 3px 0 0; font-size: 10px; }
+
+        .footer-menu {
+            position: fixed; bottom: 0; width: 100%; max-width: 450px; background: #000;
+            display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid rgba(184,134,11,0.3); z-index: 1001;
+        }
+        .footer-item { display: flex; flex-direction: column; align-items: center; color: #888; cursor: pointer; }
+        .footer-item.active { color: var(--deep-gold); }
+        .footer-item span { font-size: 9px; margin-top: 4px; }
+
+        /* MODALS */
+        #rating-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:2000; justify-content:center; align-items:center; }
+        .badge-discount { background: var(--success-green); color: black; font-size: 8px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+         <div class="header">
+        <div class="logo-area">
+            <div class="logo">RELAXGO</div>
+            <div class="saldo-header" id="header-rp-val">Rp 0,-</div>
+        </div>
+        
+        <div class="profile-area" onclick="openAuth()">
+            <div class="profile-circle">
+                <img id="user-photo" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" style="width:100%">
+            </div>
+            <div class="login-text" id="auth-status-text">Login/Daftar</div>
+        </div>
+    </div>
+
+    <div id="auth-modal">
+        <div class="modal-box">
+            <h3>DAFTAR MEMBER RELAXGO</h3>
+            <input type="text" id="reg-name" placeholder="Nama Lengkap (Sesuai KTP)">
+            <input type="text" id="reg-address" placeholder="Alamat Sesuai Domisili">
+            <input type="number" id="reg-nik" placeholder="NIK (No Induk Kependudukan)">
+            <input type="password" id="reg-pass" placeholder="Password">
+            <input type="password" id="reg-pass-confirm" placeholder="Konfirmasi Password">
+            
+            <button class="dur-btn active" style="width:100%; margin-top: 15px;" onclick="handleAuth()">DAFTAR SEKARANG</button>
+            <p onclick="closeAuth()" style="font-size:11px; color:#888; cursor:pointer; margin-top:15px">Tutup</p>
+        </div>
+    </div>
+
+    <div id="pages-container">
+        
+        <div id="page-home" class="tab-page active">
+            <div class="section">
+                <div style="display:flex; justify-content: space-between; align-items: center;">
+                    <h3>Lokasi Penjemputan</h3>
+                    <span id="order-status-tag" style="font-size: 9px; color: var(--success-green); font-weight: bold;">[ GPS AKTIF ]</span>
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <div class="section">
+                <h3>Terapis Premium Tersedia</h3>
+                <div class="terapis-scroll" id="terapis-list">
+                    <div class="terapis-card active" onclick="selectTerapis('Santi', '4.9', this)">
+                        <img src="https://i.pravatar.cc/150?u=santi" class="terapis-avatar">
+                        <span class="terapis-name">Santi</span>
+                        <div class="terapis-rating"><i class="material-icons" style="font-size:10px">star</i> 4.9</div>
+                    </div>
+                    <div class="terapis-card" onclick="selectTerapis('Budi', '4.8', this)">
+                        <img src="https://i.pravatar.cc/150?u=budi" class="terapis-avatar">
+                        <span class="terapis-name">Budi</span>
+                        <div class="terapis-rating"><i class="material-icons" style="font-size:10px">star</i> 4.8</div>
+                    </div>
+                    <div class="terapis-card" onclick="selectTerapis('Dewi', '5.0', this)">
+                        <img src="https://i.pravatar.cc/150?u=dewi" class="terapis-avatar">
+                        <span class="terapis-name">Dewi</span>
+                        <div class="terapis-rating"><i class="material-icons" style="font-size:10px">star</i> 5.0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Layanan Premium</h3>
+                <div class="service-grid">
+                    <div class="service-card active" onclick="setService('tradisional', this)"><div class="icon">🖐️</div><div class="title">Tradisional</div></div>
+                    <div class="service-card" onclick="setService('refleksi', this)"><div class="icon">👣</div><div class="title">Refleksi</div></div>
+                    <div class="service-card" onclick="setService('akupresur', this)"><div class="icon">📍</div><div class="title">Akupresur</div></div>
+                    <div class="service-card" onclick="setService('aromaterapi', this)"><div class="icon">🌿</div><div class="title">Aroma</div></div>
+                    <div class="service-card" onclick="setService('deeptissue', this)"><div class="icon">💪</div><div class="title">Deep Tissue</div></div>
+                    <div class="service-card" onclick="setService('prenatal', this)"><div class="icon">🤰</div><div class="title">Prenatal</div></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Durasi Layanan</h3>
+                <div class="duration-row">
+                    <button class="dur-btn" onclick="setDur(30, this)">30 Mnt</button>
+                    <button class="dur-btn active" onclick="setDur(60, this)">60 Mnt</button>
+                    <button class="dur-btn" onclick="setDur(90, this)">90 Mnt</button>
+                </div>
+
+                <div class="order-summary-box">
+                    <div>
+                        <div style="font-size: 9px; color: #888;">Estimasi Total</div>
+                        <div class="price-total" id="view-total">Rp 0</div>
+                    </div>
+                    <button class="dur-btn active" style="padding: 10px 25px;" onclick="placeOrder()">PESAN SEKARANG</button>
+                </div>
+            </div>
+
+            <div class="section slideshow-section">
+                <h3>Info Layanan RELAXGO</h3>
+                <div class="slideshow-container">
+                    <div class="mySlides">
+                        <img src="https://images.unsplash.com/photo-1544161515-4af6b1d462c2?auto=format&fit=crop&w=600" alt="Tradisional">
+                        <div class="slide-caption"><h2>Pijat Tradisional</h2><p>Sentuhan warisan nusantara.</p></div>
+                    </div>
+                    <div class="mySlides">
+                        <img src="https://images.unsplash.com/photo-1519823551278-64ac92734fb1?auto=format&fit=crop&w=600" alt="Refleksi">
+                        <div class="slide-caption"><h2>Refleksi Executive</h2><p>Keseimbangan energi tubuh.</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-payment" class="tab-page" style="padding: 20px;">
+            <h3>Dompet Digital</h3>
+            <div class="wallet-card">
+                <div class="wallet-chip"></div>
+                <div class="wallet-label">Saldo Koin RXG</div>
+                <div class="wallet-balance" id="wallet-koin-val">0</div>
+                <div class="wallet-footer">
+                    <div><div class="wallet-label">Nama Pemilik</div><div id="wallet-user-name" style="font-weight: bold;">GUEST USER</div></div>
+                    <div style="text-align: right;"><div class="wallet-label">Status Member</div><div style="color: #FFD700; font-weight: bold;">STANDARD</div></div>
+                </div>
+            </div>
+
+            <h3>Metode Pembayaran</h3>
+            <div class="pay-method-item active" id="pay-rxg" onclick="selectPayment('RXG Token', this)">
+                <i class="material-icons" style="color: #FFD700;">monetization_on</i>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px;">RXG Token <span class="badge-discount">DISC 10%</span></div>
+                    <div style="font-size: 10px; color: #888;">Bayar lebih hemat dengan token</div>
+                </div>
+                <i class="material-icons" style="color: var(--success-green);">check_circle</i>
+            </div>
+            <div class="pay-method-item" id="pay-wallet" onclick="selectPayment('E-Wallet', this)">
+                <i class="material-icons" style="color: #00FF7F;">account_balance_wallet</i>
+                <div style="flex: 1;"><div style="font-size: 14px;">E-Wallet</div><div style="font-size: 10px; color: #888;">OVO, Dana, Gopay</div></div>
+                <i class="material-icons">chevron_right</i>
+            </div>
+            <div class="pay-method-item" id="pay-cash" onclick="selectPayment('Cash', this)">
+                <i class="material-icons" style="color: var(--deep-gold);">payments</i>
+                <div style="flex: 1;"><div style="font-size: 14px;">Tunai (Cash)</div><div style="font-size: 10px; color: #888;">Bayar langsung ke terapis</div></div>
+                <i class="material-icons">chevron_right</i>
+            </div>
+        </div>
+
+        <div id="page-activity" class="tab-page" style="padding: 20px;">
+            <h3>Aktivitas Pesanan</h3>
+            <div id="order-history-list">
+                <div style="text-align: center; margin-top: 100px; color: #444;">
+                    <i class="material-icons" style="font-size: 48px;">history</i>
+                    <p>Belum ada riwayat pemesanan.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-profile" class="tab-page">
+            <div class="profile-header">
+                <div class="profile-avatar-large"><img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" style="width:100%"></div>
+                <h2 id="prof-name" style="margin: 5px 0; color: var(--deep-gold);">Guest User</h2>
+                <p id="prof-phone" style="margin: 0; color: #888; font-size: 14px;">Belum Login</p>
+            </div>
+            <div style="margin-top: 10px;">
+                <div class="profile-menu-item" onclick="alert('Staking Program akan muncul di sini!')"><i class="material-icons">trending_up</i><span>Investor Staking (Global)</span></div>
+                <div class="profile-menu-item" onclick="alert('Member Card segera hadir!')"><i class="material-icons">workspace_premium</i><span>Member Card & Loyalitas</span></div>
+                <div class="profile-menu-item" onclick="openAuth()"><i class="material-icons">settings</i><span>Pengaturan Akun</span></div>
+                <div class="profile-menu-item" onclick="location.reload()" style="color: #ff4444;"><i class="material-icons" style="color: #ff4444;">logout</i><span>Keluar Aplikasi</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-menu">
+        <div class="footer-item active" onclick="switchTab('home', this)"><i class="material-icons">home</i><span>Beranda</span></div>
+        <div id="btn-pay-menu" class="footer-item" onclick="switchTab('payment', this)"><i class="material-icons">payments</i><span>Bayar</span></div>
+        <div class="footer-item" onclick="switchTab('activity', this)"><i class="material-icons">description</i><span>Aktivitas</span></div>
+        <div class="footer-item" onclick="alert('Fitur Chat segera hadir!')"><i class="material-icons">chat_bubble</i><span>Pesan</span></div>
+        <div id="btn-profile-menu" class="footer-item" onclick="switchTab('profile', this)"><i class="material-icons">person</i><span>Profil</span></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
+<script>
+    const firebaseConfig = { databaseURL: "https://pijat-online-app-default-rtdb.firebaseio.com/" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const fbDB = firebase.database();
+
+    let map, markerUser, markerTerapis;
+    let selectedService = 'tradisional';
+    let selectedDuration = 60;
+    let selectedTerapis = 'Santi';
+    let selectedMethod = 'RXG Token';
+    let currentUser = null;
+    let hargaRealtime = { tradisional: 2000, booking: 10000, transport: 5000 };
+
+    // TAB SYSTEM
+    function switchTab(tabId, element) {
+        document.querySelectorAll('.tab-page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.footer-item').forEach(i => i.classList.remove('active'));
+        document.getElementById('page-' + tabId).classList.add('active');
+        element.classList.add('active');
+        if(tabId === 'payment' && currentUser) {
+            document.getElementById('wallet-user-name').innerText = currentUser.name.toUpperCase();
+            // Ambil dari variabel atau elemen yang sesuai
+            const koinVal = document.getElementById('header-rp-val').innerText;
+            document.getElementById('wallet-koin-val').innerText = koinVal;
+        }
+        if(tabId === 'home' && map) setTimeout(() => map.invalidateSize(), 300);
+    }
+
+    function openAuth() { document.getElementById('auth-modal').style.display = 'flex'; }
+    function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
+    
+    function handleAuth() {
+        const name = document.getElementById('reg-name').value;
+        const address = document.getElementById('reg-address').value;
+        const nik = document.getElementById('reg-nik').value;
+        const pass = document.getElementById('reg-pass').value;
+        const passConfirm = document.getElementById('reg-pass-confirm').value;
+
+        if(!name || !address || !nik || !pass) return alert("Lengkapi data!");
+        if(nik.length < 16) return alert("NIK harus 16 digit!");
+        if(pass !== passConfirm) return alert("Password tidak cocok!");
+
+        currentUser = { name, address, nik };
+        localStorage.setItem('RELAXO_USER', JSON.stringify(currentUser));
+
+        // Update UI Header & Profile
+        document.getElementById('auth-status-text').innerText = "PROFIL";
+        document.getElementById('auth-status-text').style.color = "#00FF7F";
+        document.getElementById('prof-name').innerText = name;
+        document.getElementById('prof-phone').innerText = "NIK: " + nik;
+
+        closeAuth();
+        alert("Pendaftaran Berhasil!");
+    }
+
+    // CALCULATION + DISCOUNT
+    function calculate() {
+        const base = parseInt(hargaRealtime[selectedService] || 2000);
+        let total = (base * selectedDuration) + parseInt(hargaRealtime.booking || 0) + parseInt(hargaRealtime.transport || 0);
+        if(selectedMethod === 'RXG Token') total = total * 0.9; // DISKON 10%
+        document.getElementById('view-total').innerText = "Rp " + total.toLocaleString('id-ID');
+        return total;
+    }
+
+    function initMap() {
+        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-7.15097, 111.88175], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        markerUser = L.marker([-7.15097, 111.88175]).addTo(map).bindPopup("Lokasi Anda").openPopup();
+        // Simulasi marker terapis yang bergerak
+        markerTerapis = L.circleMarker([-7.155, 111.885], { color: '#FFD700', radius: 8 }).addTo(map).bindPopup("Terapis: " + selectedTerapis);
+    }
+
+    function selectTerapis(name, rate, el) {
+        selectedTerapis = name;
+        document.querySelectorAll('.terapis-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        if(markerTerapis) markerTerapis.setPopupContent("Terapis: " + name);
+    }
+
+    function selectPayment(m, el) {
+        selectedMethod = m;
+        document.querySelectorAll('.pay-method-item').forEach(p => {
+            p.classList.remove('active');
+            p.querySelector('.material-icons:last-child').innerText = 'chevron_right';
+            p.querySelector('.material-icons:last-child').style.color = '#888';
+        });
+        el.classList.add('active');
+        el.querySelector('.material-icons:last-child').innerText = 'check_circle';
+        el.querySelector('.material-icons:last-child').style.color = 'var(--success-green)';
+        calculate();
+    }
+
+    function setService(val, el) {
+        selectedService = val;
+        document.querySelectorAll('.service-card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        calculate();
+    }
+
+    function setDur(val, el) {
+        selectedDuration = val;
+        document.querySelectorAll('.dur-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        calculate();
+    }
+
+    function placeOrder() {
+        if(!currentUser) return openAuth();
+        const finalPrice = calculate();
+        fbDB.ref('database_orders').push({
+            nama_pelanggan: currentUser.name,
+            terapis_pilihan: selectedTerapis,
+            layanan: selectedService,
+            durasi: selectedDuration,
+            metode_bayar: selectedMethod,
+            total_bayar: finalPrice,
+            status: "Mencari Terapis",
+            waktu: new Date().toLocaleString()
+        }).then(() => {
+            alert("Pesanan Diterima! Terapis " + selectedTerapis + " sedang bersiap.");
+            switchTab('activity', document.querySelectorAll('.footer-item')[2]);
+        });
+    }
+
+    let slideIndex = 0;
+    function showSlides() {
+        let slides = document.getElementsByClassName("mySlides");
+        for (let i = 0; i < slides.length; i++) slides[i].style.display = "none";
+        slideIndex++;
+        if (slideIndex > slides.length) slideIndex = 1;
+        if(slides[slideIndex-1]) slides[slideIndex-1].style.display = "block";
+        setTimeout(showSlides, 4000);
+    }
+
+    window.onload = () => {
+        initMap();
+        showSlides();
+        fbDB.ref('pengaturan_harga').on('value', (s) => {
+            if(s.val()) hargaRealtime = s.val();
+            calculate();
+        });
+        
+        const saved = localStorage.getItem('RELAXO_USER');
+        if(saved) {
+            currentUser = JSON.parse(saved);
+            document.getElementById('auth-status-text').innerText = "PROFIL";
+            document.getElementById('auth-status-text').style.color = "#00FF7F";
+            document.getElementById('prof-name').innerText = currentUser.name;
+            document.getElementById('prof-phone').innerText = "NIK: " + currentUser.nik;
+            
+            fbDB.ref('users/' + currentUser.nik + '/koin').on('value', (s) => {
+                const val = (s.val() || 0);
+                document.getElementById('header-rp-val').innerText = "Rp " + val.toLocaleString('id-ID');
+            });
+        }
+    };
+</script>
+</body>
+</html>
